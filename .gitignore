@@ -1,0 +1,39 @@
+# Python
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+.eggs/
+dist/
+build/
+
+# Environment
+.env
+.env.*
+
+# Data — raw scraped files (too large + potentially sensitive)
+data/raw/
+data/processed/
+data/embeddings/
+
+# YouTube videos
+data/raw/_youtube_videos/
+data/raw/_youtube_tmp/
+data/raw/_youtube_audio_tmp/
+
+# Glassdoor session (cookies)
+glassdoor_session.json
+
+# Logs
+*.log
+scraping.log
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db

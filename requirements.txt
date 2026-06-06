@@ -1,0 +1,29 @@
+# Core scraping
+requests>=2.31.0
+beautifulsoup4>=4.12.0
+trafilatura>=1.8.0
+lxml>=5.0.0
+httpx>=0.27.0
+
+# JS-heavy scraping
+playwright>=1.44.0
+# After install: playwright install chromium
+playwright-stealth>=1.3.0
+
+# Reddit API
+praw>=7.7.0
+
+# YouTube video download + transcription
+yt-dlp>=2024.5.1
+openai-whisper
+torch
+
+# Data processing
+python-dotenv>=1.0.0
+tqdm>=4.66.0
+
+# CLI / logging
+rich>=13.7.0
+
+# Optional: faster HTML parsing
+html5lib>=1.1
