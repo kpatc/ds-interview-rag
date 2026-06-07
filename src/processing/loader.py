@@ -16,7 +16,12 @@ log = logging.getLogger(__name__)
 
 RAW_DIR = Path(__file__).parent.parent.parent / "data" / "raw"
 
-MIN_CONTENT_CHARS = 300  # raised from 100 — filters noise and scraping failures
+MIN_CONTENT_CHARS = 300  # default — filters noise and scraping failures
+# Some source types have short but valid content
+_MIN_CHARS_BY_SOURCE: dict[str, int] = {
+    "image_ocr":    50,   # OA screenshot questions split across screens
+    "qa_technical": 80,   # individual Q&A interview questions
+}
 
 
 def _quality_score(doc: dict) -> float:
@@ -82,7 +87,11 @@ def _iter_file(path: Path) -> Iterator[dict]:
             log.debug(f"  glassdoor {path.name}: {n_ok} reviews extracted")
             continue
 
-        if len(rec.get("content", "")) < MIN_CONTENT_CHARS:
+        # Check by content_type first (more specific), then source_type
+        ct_key = rec.get("content_type", rec.get("source_type", ""))
+        st_key = rec.get("source_type", "")
+        min_chars = _MIN_CHARS_BY_SOURCE.get(ct_key) or _MIN_CHARS_BY_SOURCE.get(st_key) or MIN_CONTENT_CHARS
+        if len(rec.get("content", "")) < min_chars:
             continue
 
         rec["_quality_score"] = _quality_score(rec)
@@ -95,6 +104,12 @@ def load_all_documents(raw_dir: Path = RAW_DIR) -> list[dict]:
     for path in sorted(raw_dir.rglob("*.json")):
         if path.name == "manifest.json":
             continue
+        # Skip the raw source files that were already extracted to .extracted.json
+        # (the .extracted.json itself is loaded instead)
+        if path.name.endswith(".extracted.json"):
+            pass  # load normally — it IS the extracted doc
+        elif any(path.parent.glob(path.name + ".extracted.json")):
+            continue  # skip: image/pdf already has its extracted JSON
         for doc in _iter_file(path):
             docs.append(doc)
             st = doc.get("source_type", "unknown")

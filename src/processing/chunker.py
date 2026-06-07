@@ -17,6 +17,7 @@ _CHUNK_TOKENS: dict[str, int] = {
     "article":            400,
     "forum_post":         400,
     "teamblind_post":     400,
+    "qa_technical":       350,  # one question + context prefix per chunk
 }
 _OVERLAP_TOKENS: dict[str, int] = {
     "youtube_transcript": 100,
@@ -25,6 +26,7 @@ _OVERLAP_TOKENS: dict[str, int] = {
     "article":             60,
     "forum_post":          60,
     "teamblind_post":      60,
+    "qa_technical":         0,  # no overlap — each question is self-contained
 }
 MIN_CHUNK_CHARS = 120
 # Docs shorter than this are emitted as a single chunk without splitting
@@ -98,9 +100,119 @@ def _chunk_sentences(
         yield " ".join(current)
 
 
+_QA_SPLIT_RE = re.compile(r"\n+(?=q\d+\s*:)", re.IGNORECASE)
+
+# Rough topic detection for Q&A questions
+_QA_TOPIC_KEYWORDS: dict[str, list[str]] = {
+    "SQL":              ["sql", "select", "join", "query", "table", "window function"],
+    "statistics":       ["precision", "recall", "p-value", "hypothesis", "distribution", "variance", "bias"],
+    "machine learning": ["regression", "classification", "gradient", "overfitting", "cross-validation", "feature"],
+    "probability":      ["probability", "bayes", "conditional", "random variable"],
+    "Python":           ["python", "pandas", "numpy", "list comprehension", "dictionary"],
+}
+
+def _detect_qa_topic(question_text: str) -> str:
+    t = question_text.lower()
+    for topic, kws in _QA_TOPIC_KEYWORDS.items():
+        if any(kw in t for kw in kws):
+            return topic
+    return "Data Science"
+
+
+def _split_qa_document(doc: dict) -> list[str]:
+    """Split Q&A content per question, adding a retrieval-friendly context prefix."""
+    company = doc.get("company", "Both")
+    round_type = doc.get("round_type", "Technical")
+    source_name = doc.get("source_name", "")
+
+    # Extract source label (e.g. "DataLemur" from "DataLemur — BCG Technical Interview Questions")
+    source_label = source_name.split("—")[0].strip() if "—" in source_name else source_name[:20]
+
+    raw = doc.get("content", "")
+    questions = [q.strip() for q in _QA_SPLIT_RE.split(raw) if q.strip()]
+
+    chunks = []
+    for q in questions:
+        topic = _detect_qa_topic(q)
+        prefix = f"[{company} {round_type} Interview Question | {topic} | {source_label}]"
+        chunks.append(f"{prefix}\n\n{q}")
+    return chunks
+
+
+def _detect_oa_platform(doc: dict) -> tuple[str, str]:
+    """
+    Returns (company_label, platform) for an image_ocr doc.
+    BCG uses CodeSignal; McKinsey uses HackerRank.
+    Falls back to content scan if company field is ambiguous.
+    """
+    company = doc.get("company", "Both").strip()
+    content = (doc.get("content", "") + " " + doc.get("question_summary", "")).lower()
+
+    if company == "BCG":
+        return "BCG", "CodeSignal"
+    if company in ("McKinsey", "MBB"):
+        return "McKinsey", "HackerRank"
+
+    # Ambiguous — scan extracted text for platform signals
+    if "codesignal" in content or "code signal" in content:
+        return "BCG", "CodeSignal"
+    if "hackerrank" in content or "hacker rank" in content:
+        return "McKinsey", "HackerRank"
+
+    # Default: treat as BCG CodeSignal (most screenshots in dataset are BCG)
+    return "BCG", "CodeSignal"
+
+
+def _image_ocr_prefix(doc: dict) -> str:
+    """Build a searchable context prefix for OA screenshot chunks."""
+    company, platform = _detect_oa_platform(doc)
+    parts = [f"[{company} OA {platform} Exercise"]
+    qt = doc.get("question_type", "")
+    if qt:
+        parts.append(f"| {qt}")
+    topics = doc.get("topics", [])
+    if topics:
+        parts.append(f"| Topics: {', '.join(topics)}")
+    diff = doc.get("difficulty", "")
+    if diff:
+        parts.append(f"| Difficulty: {diff}")
+    parts.append("]")
+    return " ".join(parts)
+
+
 def chunk_document(doc: dict) -> list[dict]:
     content = doc.get("content", "")
     content_type = doc.get("content_type", doc.get("source_type", "unknown"))
+
+    # Q&A technical questions: split per question with topic prefix
+    if content_type == "qa_technical" and content.strip():
+        texts = [t for t in _split_qa_document(doc) if len(t) >= MIN_CHUNK_CHARS]
+        total = len(texts)
+        chunks = []
+        for i, text in enumerate(texts):
+            chunk_id = hashlib.md5(f"{doc.get('id', '')}-{i}".encode()).hexdigest()
+            chunks.append({
+                "chunk_id": chunk_id, "doc_id": doc.get("id", ""),
+                "chunk_index": i, "chunk_total": total,
+                "text": text, "char_count": len(text), "token_count": _token_len(text),
+                "source_type": doc.get("source_type", "article"),
+                "content_type": content_type,
+                "source_name": doc.get("source_name", ""),
+                "url": doc.get("url", ""), "company": doc.get("company", "Both"),
+                "round_type": doc.get("round_type", "Technical"),
+                "title": doc.get("source_name", ""), "scraped_at": doc.get("scraped_at", ""),
+                "quality_score": doc.get("_quality_score", 0.0),
+                "author": "", "subreddit": "", "duration_seconds": 0, "video_path": "",
+                "review_index": -1, "review_date": "", "review_location": "",
+                "review_outcome": "", "review_difficulty": "",
+                "question_type": "", "topics": [], "question_summary": "",
+                "difficulty": "", "screen_count": 1,
+            })
+        return chunks
+
+    # Prepend searchable context header for OA screenshots so BM25 can find them
+    if content_type == "image_ocr" and content.strip():
+        content = _image_ocr_prefix(doc) + "\n\n" + content
 
     chunk_tokens = _CHUNK_TOKENS.get(content_type, 400)
     overlap_tokens = _OVERLAP_TOKENS.get(content_type, 80)
@@ -150,6 +262,12 @@ def chunk_document(doc: dict) -> list[dict]:
             "review_location":   doc.get("review_location", ""),
             "review_outcome":    doc.get("review_outcome", ""),
             "review_difficulty": doc.get("review_difficulty", ""),
+            # OA screenshot fields (image_ocr)
+            "question_type":     doc.get("question_type", ""),
+            "topics":            doc.get("topics", []),
+            "question_summary":  doc.get("question_summary", ""),
+            "difficulty":        doc.get("difficulty", ""),
+            "screen_count":      doc.get("screen_count", 1),
         })
     return chunks
 

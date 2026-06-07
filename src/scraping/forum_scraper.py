@@ -20,7 +20,7 @@ import trafilatura
 from bs4 import BeautifulSoup
 from rich.console import Console
 
-from scraper_config import STATIC_TARGETS, ScrapingTarget
+from scraper_config import STATIC_TARGETS, ScrapingTarget, DS_INCLUDE_KEYWORDS, DE_EXCLUDE_KEYWORDS
 
 console = Console()
 log = logging.getLogger(__name__)
@@ -48,6 +48,14 @@ except ImportError:
 # STATIC SCRAPER (requests + trafilatura)
 # ──────────────────────────────────────────────────────────────
 
+JINA_HEADERS = {
+    "User-Agent": HEADERS["User-Agent"],
+    "Accept": "text/plain,text/markdown,*/*",
+    "X-Return-Format": "markdown",
+    "X-No-Cache": "true",
+}
+
+
 class FullThreadScraper:
 
     def __init__(self):
@@ -56,15 +64,24 @@ class FullThreadScraper:
 
     def scrape(self, target: ScrapingTarget) -> Optional[Dict]:
         log.info(f"[forum] GET {target.url}")
+        content = None
+
+        # Direct request first
         try:
             resp = self.session.get(target.url, timeout=25)
+            if resp.status_code == 403:
+                raise requests.HTTPError(f"403 Forbidden")
             resp.raise_for_status()
             log.debug(f"[forum] HTTP {resp.status_code} {len(resp.text)//1000}KB ← {target.url}")
+            raw = self._extract_by_domain(resp.text, target.url)
+            if raw and len(raw) >= 200:
+                content = raw
         except Exception as e:
-            log.error(f"[forum] HTTP FAIL — {target.name[:50]} | {e}")
-            return None
+            log.warning(f"[forum] Direct GET failed ({e}) — trying Jina Reader fallback")
 
-        content = self._extract_by_domain(resp.text, target.url)
+        # Jina AI Reader fallback (bypasses 403/anti-bot)
+        if not content:
+            content = self._jina_fetch(target.url, target.name)
 
         if not content or len(content) < 200:
             log.warning(f"[forum] SHORT CONTENT {len(content or '')}c (min 200) — {target.name[:50]}")
@@ -72,6 +89,31 @@ class FullThreadScraper:
 
         log.info(f"[forum] OK {len(content):,}c extracted — {target.name[:50]}")
         return self._make_record(target, content)
+
+    def _jina_fetch(self, url: str, name: str) -> Optional[str]:
+        """Fetch via Jina AI Reader — bypasses bot detection, returns clean markdown."""
+        jina_url = f"https://r.jina.ai/{url}"
+        try:
+            resp = requests.get(jina_url, headers=JINA_HEADERS, timeout=30)
+            resp.raise_for_status()
+            text = resp.text.strip()
+            # Jina prepends metadata lines — strip them
+            lines = text.split("\n")
+            content_lines = [l for l in lines if not l.startswith(("Title:", "URL Source:", "Markdown Content:", "Published Time:"))]
+            content = "\n".join(content_lines).strip()
+            # Strip Jina warning lines (e.g. "Warning: Target URL returned error 404")
+            # but only if it's a real error (404/429) — keep content if page has substance
+            if "error 404" in content[:200].lower() or "error 429" in content[:200].lower():
+                log.warning(f"[jina] Error response — {name[:50]}")
+                return None
+            # Strip the warning prefix line itself but keep the rest
+            content = re.sub(r"Warning: This page maybe not yet fully loaded[^\n]*\n?", "", content).strip()
+            log.info(f"[jina] OK {len(content):,}c — {name[:50]}")
+            time.sleep(2.0)  # Jina rate limit
+            return content if len(content) >= 200 else None
+        except Exception as e:
+            log.error(f"[jina] FAILED — {name[:50]} | {e}")
+            return None
 
     def _extract_by_domain(self, html: str, url: str) -> str:
         domain = url.split("/")[2].lower()
@@ -454,10 +496,25 @@ class PlaywrightForumScraper:
 # ORCHESTRATOR
 # ──────────────────────────────────────────────────────────────
 
+def _is_ds_relevant(content: str, target: ScrapingTarget) -> bool:
+    """
+    Reject content that is clearly off-topic (DE/infra) and has zero DS signal.
+    URLs are already curated so we apply a light check, not a strict one.
+    Always pass if the target name itself contains DS keywords (BCG/McKinsey DS articles).
+    """
+    text_lower = content.lower()
+    has_ds = any(kw in text_lower for kw in DS_INCLUDE_KEYWORDS)
+    has_de = any(kw in text_lower for kw in DE_EXCLUDE_KEYWORDS)
+    # If no DS signal at all AND heavy DE signal → reject
+    if not has_ds and has_de:
+        return False
+    return True
+
+
 def run_forum_scraping():
     static = FullThreadScraper()
     playwright_scraper = PlaywrightForumScraper()
-    results = {"success": 0, "failed": 0, "skipped": 0}
+    results = {"success": 0, "failed": 0, "skipped": 0, "filtered": 0}
     total = len(STATIC_TARGETS)
 
     log.info(f"[forum] ── Starting forum scraping: {total} targets ──")
@@ -478,6 +535,10 @@ def run_forum_scraping():
         record = playwright_scraper.scrape(target) if target.requires_js else static.scrape(target)
 
         if record:
+            if not _is_ds_relevant(record["content"], target):
+                log.warning(f"[forum] DS-FILTER REJECTED (no DS signal) — {target.name[:55]}")
+                results["filtered"] += 1
+                continue
             with open(out_path, "w", encoding="utf-8") as f:
                 json.dump(record, f, ensure_ascii=False, indent=2)
             log.info(f"[forum] SAVED {record['char_count']:,}c → {out_path}")
@@ -490,7 +551,8 @@ def run_forum_scraping():
 
     log.info(
         f"[forum] ── Done: {results['success']} saved, "
-        f"{results['failed']} failed, {results['skipped']} cached ──"
+        f"{results['failed']} failed, {results['skipped']} cached, "
+        f"{results['filtered']} rejected (DS filter) ──"
     )
     return results
 

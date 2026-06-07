@@ -157,14 +157,14 @@ def retrieve(
     ce_scores = ce.predict(pairs)
     reranked = sorted(zip(candidate_indices, ce_scores), key=lambda x: x[1], reverse=True)
 
-    # ── 5. Deduplicate by doc_id ──
+    # ── 5. Deduplicate by doc_id (max 1 chunk per source document) ──
     seen_docs: set[str] = set()
     results = []
     for idx, score in reranked:
         chunk = chunks[idx].copy()
         chunk["_score"] = float(score)
         doc_id = chunk.get("doc_id", chunk["chunk_id"])
-        if doc_id in seen_docs and len(results) >= 3:
+        if doc_id in seen_docs:
             continue
         seen_docs.add(doc_id)
         results.append(chunk)
