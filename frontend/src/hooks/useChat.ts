@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef } from "react";
-import type { Message, Company, RoundType, Source } from "../types";
+import type { Message, Company, RoundType, Source, QualityResult } from "../types";
 
 const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8000";
 
@@ -27,6 +27,7 @@ export function useChat() {
         content: "",
         sources: [],
         isStreaming: true,
+        isRefining: false,
       };
 
       setMessages((prev) => [...prev, userMsg, assistantMsg]);
@@ -47,6 +48,8 @@ export function useChat() {
         let buffer = "";
         let sources: Source[] = [];
         let content = "";
+        // Track whether the next tokens are for the refined answer
+        let inRefining = false;
 
         while (true) {
           const { done, value } = await reader.read();
@@ -59,25 +62,62 @@ export function useChat() {
             if (!line.startsWith("data: ")) continue;
             try {
               const evt = JSON.parse(line.slice(6));
+
               if (evt.type === "sources") {
                 sources = evt.sources;
                 setMessages((prev) =>
                   prev.map((m) => (m.id === assistantId ? { ...m, sources } : m))
                 );
+
               } else if (evt.type === "token") {
-                content += evt.text;
+                if (inRefining) {
+                  // Refined answer replaces the first-pass content
+                  content += evt.text;
+                } else {
+                  content += evt.text;
+                }
                 setMessages((prev) =>
                   prev.map((m) => (m.id === assistantId ? { ...m, content } : m))
                 );
+
+              } else if (evt.type === "quality") {
+                const quality: QualityResult = {
+                  score: evt.score,
+                  pass: evt.pass,
+                  dimensions: evt.dimensions ?? {},
+                  gaps: evt.gaps ?? [],
+                };
+                setMessages((prev) =>
+                  prev.map((m) =>
+                    m.id === assistantId ? { ...m, quality, isRefining: false } : m
+                  )
+                );
+
+              } else if (evt.type === "refining") {
+                inRefining = true;
+                content = "";  // reset so refined answer builds fresh
+                setMessages((prev) =>
+                  prev.map((m) =>
+                    m.id === assistantId
+                      ? { ...m, content: "", isRefining: true }
+                      : m
+                  )
+                );
+
               } else if (evt.type === "done") {
                 setMessages((prev) =>
-                  prev.map((m) => (m.id === assistantId ? { ...m, isStreaming: false } : m))
+                  prev.map((m) =>
+                    m.id === assistantId
+                      ? { ...m, isStreaming: false, isRefining: false }
+                      : m
+                  )
                 );
+
               } else if (evt.type === "error") {
                 setMessages((prev) =>
                   prev.map((m) =>
                     m.id === assistantId
-                      ? { ...m, content: `Error: ${evt.message}`, isStreaming: false }
+                      ? { ...m, content: `Error: ${evt.message}`, isStreaming: false, isRefining: false }
                       : m
                   )
                 );
@@ -90,7 +130,7 @@ export function useChat() {
         setMessages((prev) =>
           prev.map((m) =>
             m.id === assistantId
-              ? { ...m, content: "Connection error. Is the API running?", isStreaming: false }
+              ? { ...m, content: "Connection error. Is the API running?", isStreaming: false, isRefining: false }
               : m
           )
         );
@@ -104,7 +144,7 @@ export function useChat() {
   const stop = useCallback(() => {
     abortRef.current?.abort();
     setMessages((prev) =>
-      prev.map((m) => (m.isStreaming ? { ...m, isStreaming: false } : m))
+      prev.map((m) => (m.isStreaming ? { ...m, isStreaming: false, isRefining: false } : m))
     );
     setIsLoading(false);
   }, []);

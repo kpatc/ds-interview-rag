@@ -1,4 +1,4 @@
-import { ExternalLink, MessageSquare, FileText, Play, Star } from "lucide-react";
+import { ExternalLink, MessageSquare, FileText, Play, Star, AlertTriangle, ShieldCheck } from "lucide-react";
 import type { Source } from "../types";
 
 const SOURCE_META: Record<string, { icon: React.ReactNode; color: string; bg: string }> = {
@@ -75,14 +75,30 @@ export function SourceCard({ source }: Props) {
         </div>
       </div>
 
-      <div className="flex items-center gap-1.5">
+      <div className="flex items-center gap-1.5 flex-wrap">
         <span className="text-zinc-500 bg-zinc-800 px-1.5 py-0.5 rounded text-[10px]">
           {source.round_type}
         </span>
-        <span className="text-zinc-600 text-[10px] ml-auto">
-          score {source.score.toFixed(3)}
+        <span className="flex items-center gap-0.5 text-zinc-600 text-[10px]">
+          <ShieldCheck size={9} />
+          {(source.trust_score * 10).toFixed(0)}/10
+        </span>
+        {source.conflict && (
+          <span className="flex items-center gap-0.5 text-amber-500 text-[10px]">
+            <AlertTriangle size={9} />
+            {source.conflict_type}
+          </span>
+        )}
+        <span className="text-zinc-700 text-[10px] ml-auto">
+          {source.score.toFixed(3)}
         </span>
       </div>
+
+      {source.conflict && source.conflict_note && (
+        <p className="text-[10px] text-amber-600/80 bg-amber-950/30 rounded px-2 py-1 border border-amber-900/30 leading-relaxed">
+          ⚠ {source.conflict_note}
+        </p>
+      )}
 
       <p className="text-zinc-400 leading-relaxed line-clamp-3">{source.excerpt}</p>
     </div>

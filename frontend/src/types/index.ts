@@ -8,7 +8,23 @@ export interface Source {
   round_type: string;
   url: string;
   score: number;
+  trust_score: number;
+  conflict: boolean;
+  conflict_type: string;
+  conflict_note: string;
   excerpt: string;
+}
+
+export interface QualityResult {
+  score: number;
+  pass: boolean;
+  dimensions: {
+    coverage?: number;
+    source_quality?: number;
+    specificity?: number;
+    actionability?: number;
+  };
+  gaps: string[];
 }
 
 export interface Message {
@@ -16,7 +32,9 @@ export interface Message {
   role: "user" | "assistant";
   content: string;
   sources?: Source[];
+  quality?: QualityResult;
   isStreaming?: boolean;
+  isRefining?: boolean;
   company?: Company;
   roundType?: RoundType;
 }

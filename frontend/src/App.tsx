@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import {
   Send, Square, Trash2, BookOpen, X, Sparkles, ChevronRight,
+  CheckCircle, AlertTriangle, RefreshCw, AlertCircle,
 } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 import { useChat } from './hooks/useChat'
@@ -102,10 +103,71 @@ function UserMessage({ msg }: { msg: Message }) {
   )
 }
 
+const MD_COMPONENTS = {
+  p: ({ children }: { children?: React.ReactNode }) => <p className="mb-3 last:mb-0">{children}</p>,
+  ul: ({ children }: { children?: React.ReactNode }) => <ul className="list-disc list-inside mb-3 space-y-1 text-zinc-300">{children}</ul>,
+  ol: ({ children }: { children?: React.ReactNode }) => <ol className="list-decimal list-inside mb-3 space-y-1 text-zinc-300">{children}</ol>,
+  li: ({ children }: { children?: React.ReactNode }) => <li>{children}</li>,
+  strong: ({ children }: { children?: React.ReactNode }) => <strong className="text-zinc-100 font-semibold">{children}</strong>,
+  em: ({ children }: { children?: React.ReactNode }) => <em className="text-zinc-300">{children}</em>,
+  h1: ({ children }: { children?: React.ReactNode }) => <h1 className="text-base font-semibold text-zinc-100 mb-2 mt-4 first:mt-0">{children}</h1>,
+  h2: ({ children }: { children?: React.ReactNode }) => <h2 className="text-sm font-semibold text-zinc-100 mb-1.5 mt-3 first:mt-0">{children}</h2>,
+  h3: ({ children }: { children?: React.ReactNode }) => <h3 className="text-sm font-medium text-zinc-200 mb-1.5 mt-3 first:mt-0">{children}</h3>,
+  code: ({ children }: { children?: React.ReactNode }) => (
+    <code className="bg-zinc-800 text-zinc-200 px-1.5 py-0.5 rounded text-[12px] font-mono border border-zinc-700/50">{children}</code>
+  ),
+  pre: ({ children }: { children?: React.ReactNode }) => (
+    <pre className="bg-zinc-900 border border-zinc-800 rounded-lg p-4 overflow-x-auto text-xs font-mono text-zinc-300 mb-3">{children}</pre>
+  ),
+  blockquote: ({ children }: { children?: React.ReactNode }) => (
+    <blockquote className="border-l-2 border-zinc-700 pl-4 text-zinc-400 italic my-2">{children}</blockquote>
+  ),
+}
+
+function QualityBadge({ quality }: { quality: NonNullable<Message['quality']> }) {
+  const score = quality.score
+  const passed = quality.pass
+  const pct = Math.round((score / 10) * 100)
+
+  const color = passed
+    ? 'text-emerald-400 border-emerald-800/60 bg-emerald-950/40'
+    : 'text-amber-400 border-amber-800/60 bg-amber-950/40'
+  const Icon = passed ? CheckCircle : AlertCircle
+
+  const dims = quality.dimensions
+  const dimEntries = Object.entries(dims) as [string, number][]
+
+  return (
+    <div className={`mt-3 inline-flex flex-col gap-1.5 text-[11px] border rounded-lg px-3 py-2 ${color}`}>
+      <div className="flex items-center gap-1.5 font-medium">
+        <Icon size={12} />
+        <span>Quality: {score.toFixed(1)}/10</span>
+        <span className={`ml-1 px-1.5 py-0.5 rounded text-[10px] ${passed ? 'bg-emerald-900/60' : 'bg-amber-900/60'}`}>
+          {passed ? 'PASSED' : 'REFINED'}
+        </span>
+        <div className="ml-2 w-16 h-1 rounded-full bg-zinc-800 overflow-hidden">
+          <div
+            className={`h-full rounded-full ${passed ? 'bg-emerald-500' : 'bg-amber-500'}`}
+            style={{ width: `${pct}%` }}
+          />
+        </div>
+      </div>
+      {dimEntries.length > 0 && (
+        <div className="flex gap-2 text-[10px] text-zinc-500">
+          {dimEntries.map(([k, v]) => (
+            <span key={k}>{k.replace('_', ' ')}: {v.toFixed(0)}</span>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 function AssistantMessage({
   msg, onViewSources,
 }: { msg: Message; onViewSources: (sources: Source[]) => void }) {
   const hasSources = (msg.sources?.length ?? 0) > 0
+  const conflictCount = msg.sources?.filter(s => s.conflict).length ?? 0
 
   return (
     <div className="flex gap-3 px-6 py-2 animate-slide-up">
@@ -113,6 +175,14 @@ function AssistantMessage({
         <Sparkles size={13} className="text-zinc-500" />
       </div>
       <div className="flex-1 min-w-0">
+        {/* Refining indicator */}
+        {msg.isRefining && (
+          <div className="flex items-center gap-1.5 text-[11px] text-amber-400 mb-2">
+            <RefreshCw size={11} className="animate-spin" />
+            <span>Refining with additional sources…</span>
+          </div>
+        )}
+
         <div className="text-sm text-zinc-200 leading-relaxed">
           {msg.isStreaming ? (
             <span>
@@ -120,41 +190,35 @@ function AssistantMessage({
               <span className="inline-block w-0.5 h-[14px] bg-zinc-400 ml-0.5 align-middle animate-blink" />
             </span>
           ) : (
-            <ReactMarkdown
-              components={{
-                p: ({ children }) => <p className="mb-3 last:mb-0">{children}</p>,
-                ul: ({ children }) => <ul className="list-disc list-inside mb-3 space-y-1 text-zinc-300">{children}</ul>,
-                ol: ({ children }) => <ol className="list-decimal list-inside mb-3 space-y-1 text-zinc-300">{children}</ol>,
-                li: ({ children }) => <li>{children}</li>,
-                strong: ({ children }) => <strong className="text-zinc-100 font-semibold">{children}</strong>,
-                em: ({ children }) => <em className="text-zinc-300">{children}</em>,
-                h1: ({ children }) => <h1 className="text-base font-semibold text-zinc-100 mb-2 mt-4 first:mt-0">{children}</h1>,
-                h2: ({ children }) => <h2 className="text-sm font-semibold text-zinc-100 mb-1.5 mt-3 first:mt-0">{children}</h2>,
-                h3: ({ children }) => <h3 className="text-sm font-medium text-zinc-200 mb-1.5 mt-3 first:mt-0">{children}</h3>,
-                code: ({ children }) => (
-                  <code className="bg-zinc-800 text-zinc-200 px-1.5 py-0.5 rounded text-[12px] font-mono border border-zinc-700/50">{children}</code>
-                ),
-                pre: ({ children }) => (
-                  <pre className="bg-zinc-900 border border-zinc-800 rounded-lg p-4 overflow-x-auto text-xs font-mono text-zinc-300 mb-3">{children}</pre>
-                ),
-                blockquote: ({ children }) => (
-                  <blockquote className="border-l-2 border-zinc-700 pl-4 text-zinc-400 italic my-2">{children}</blockquote>
-                ),
-              }}
-            >
+            <ReactMarkdown components={MD_COMPONENTS}>
               {msg.content}
             </ReactMarkdown>
           )}
         </div>
+
+        {/* Quality badge */}
+        {msg.quality && !msg.isStreaming && (
+          <QualityBadge quality={msg.quality} />
+        )}
+
+        {/* Sources + conflict warning */}
         {hasSources && !msg.isStreaming && (
-          <button
-            onClick={() => onViewSources(msg.sources!)}
-            className="mt-2 flex items-center gap-1 text-[11px] text-zinc-600 hover:text-zinc-400 transition-colors"
-          >
-            <BookOpen size={11} />
-            <span>{msg.sources!.length} sources</span>
-            <ChevronRight size={11} />
-          </button>
+          <div className="mt-2 flex items-center gap-3">
+            <button
+              onClick={() => onViewSources(msg.sources!)}
+              className="flex items-center gap-1 text-[11px] text-zinc-600 hover:text-zinc-400 transition-colors"
+            >
+              <BookOpen size={11} />
+              <span>{msg.sources!.length} sources</span>
+              <ChevronRight size={11} />
+            </button>
+            {conflictCount > 0 && (
+              <span className="flex items-center gap-1 text-[11px] text-amber-600">
+                <AlertTriangle size={10} />
+                {conflictCount} source{conflictCount > 1 ? 's' : ''} conflict
+              </span>
+            )}
+          </div>
         )}
       </div>
     </div>

@@ -1,0 +1,162 @@
+[
+  {
+    "id": "bcg_oa_001",
+    "question": "What is the BCG X CodeSignal OA format and how long does it take?",
+    "company": "BCG",
+    "round_type": "OA",
+    "reference": "The BCG X Online Assessment uses CodeSignal and consists of multiple sections covering probability/statistics multiple-choice questions, machine learning concept questions, and a coding challenge. Candidates typically report it lasting 60 to 120 minutes. The difficulty is described as moderate to hard, testing both theoretical knowledge and practical coding ability.",
+    "tags": ["oa", "codesignal", "format", "duration"]
+  },
+  {
+    "id": "bcg_oa_002",
+    "question": "What topics does the BCG X CodeSignal OA test?",
+    "company": "BCG",
+    "round_type": "OA",
+    "reference": "The BCG X CodeSignal OA covers probability and statistics (distributions, hypothesis testing, p-values), machine learning concepts (regression, classification, overfitting, cross-validation, gradient boosting), SQL queries, and Python coding. Some versions include a case-style data analysis question.",
+    "tags": ["oa", "codesignal", "topics", "statistics", "ml"]
+  },
+  {
+    "id": "mckinsey_oa_001",
+    "question": "How is the McKinsey QuantumBlack HackerRank OA structured?",
+    "company": "McKinsey",
+    "round_type": "OA",
+    "reference": "The McKinsey QuantumBlack Online Assessment is conducted on HackerRank and typically includes SQL challenges, Python coding problems, and data analysis tasks. It differs from BCG in that it uses HackerRank's coding environment and tends to focus more on SQL and applied data manipulation rather than pure ML theory.",
+    "tags": ["oa", "hackerrank", "format", "sql"]
+  },
+  {
+    "id": "bcg_technical_001",
+    "question": "What should I prepare for a BCG X technical interview?",
+    "company": "BCG",
+    "round_type": "Technical",
+    "reference": "BCG X technical interviews cover machine learning fundamentals (bias-variance tradeoff, regularization, ensemble methods), statistics and probability, SQL, Python programming, and a case study involving data analysis. Candidates are expected to explain ML concepts clearly and walk through their past projects. The interview is conversational, with interviewers probing depth of understanding.",
+    "tags": ["technical", "ml", "statistics", "preparation"]
+  },
+  {
+    "id": "bcg_technical_002",
+    "question": "How difficult is the BCG X data science technical interview compared to FAANG?",
+    "company": "BCG",
+    "round_type": "Technical",
+    "reference": "BCG X technical interviews are generally considered less algorithm-intensive than FAANG companies. The focus is on applied ML and business context rather than LeetCode-style competitive programming. However, statistical depth and the ability to frame data science in a business context is more emphasized than at pure tech companies.",
+    "tags": ["technical", "difficulty", "comparison"]
+  },
+  {
+    "id": "mckinsey_technical_001",
+    "question": "What does a McKinsey QuantumBlack technical interview look like?",
+    "company": "McKinsey",
+    "round_type": "Technical",
+    "reference": "McKinsey QuantumBlack technical interviews typically include a mix of ML theory questions, Python or SQL coding exercises, and a case study with real data. Interviewers often ask candidates to build or critique a model on a business problem. The bar is high for statistical rigor and the ability to communicate technical findings to non-technical stakeholders.",
+    "tags": ["technical", "ml", "case", "mckinsey"]
+  },
+  {
+    "id": "bcg_livecoding_001",
+    "question": "What is the BCG X pair programming or live coding round like?",
+    "company": "BCG",
+    "round_type": "LiveCoding",
+    "reference": "The BCG X live coding round is a collaborative pair programming session where you write Python code alongside an interviewer. Tasks typically involve data manipulation with pandas, building a simple ML pipeline, or solving an analytics problem on a real dataset. The emphasis is on readable code, communication, and problem-solving approach rather than algorithmic complexity.",
+    "tags": ["live_coding", "python", "pandas", "pair_programming"]
+  },
+  {
+    "id": "bcg_takehome_001",
+    "question": "How does the BCG X take-home case assignment work?",
+    "company": "BCG",
+    "round_type": "TakeHome",
+    "reference": "The BCG X take-home case is typically a 24 to 72-hour assignment where candidates receive a real or realistic business dataset and must produce a report or notebook. The deliverable includes exploratory data analysis, a predictive model, and business recommendations. Candidates are then asked to present their findings in a follow-up interview.",
+    "tags": ["take_home", "case", "dataset", "presentation"]
+  },
+  {
+    "id": "mckinsey_pei_001",
+    "question": "What stories should I prepare for a McKinsey PEI behavioral round?",
+    "company": "McKinsey",
+    "round_type": "PEI",
+    "reference": "For the McKinsey PEI (Personal Experience Interview), candidates should prepare 3 to 5 structured stories using the STAR method covering: leading without authority, dealing with conflict, driving impact in an ambiguous situation, overcoming a personal setback, and entrepreneurial drive. McKinsey evaluates three core dimensions: personal impact, entrepreneurial drive, and inclusive leadership.",
+    "tags": ["pei", "behavioral", "stories", "mckinsey"]
+  },
+  {
+    "id": "mckinsey_pei_002",
+    "question": "How is the McKinsey PEI different from a standard behavioral interview?",
+    "company": "McKinsey",
+    "round_type": "PEI",
+    "reference": "The McKinsey PEI differs from standard behavioral interviews in its depth and follow-up probing. Interviewers will dig 4 to 5 levels deep into a single story, asking about your specific thoughts, the alternatives you considered, and what you would do differently. Vague or rehearsed answers are quickly exposed. McKinsey uses PEI scores alongside case performance to make hiring decisions.",
+    "tags": ["pei", "behavioral", "depth", "probing"]
+  },
+  {
+    "id": "bcg_case_001",
+    "question": "Does BCG X have a business case interview similar to traditional consulting?",
+    "company": "BCG",
+    "round_type": "Case",
+    "reference": "BCG X does include a business case component, but it is more data-driven than traditional consulting cases. Candidates may be given a dataset and asked to diagnose a business problem, recommend a strategy, and quantify the impact. The case is meant to test the intersection of data science skills and business acumen rather than pure framework application.",
+    "tags": ["case", "business", "data"]
+  },
+  {
+    "id": "both_sql_001",
+    "question": "What SQL skills do BCG X and McKinsey QuantumBlack actually test?",
+    "company": "Both",
+    "round_type": "Technical",
+    "reference": "Both BCG X and McKinsey QuantumBlack test SQL skills including window functions (ROW_NUMBER, RANK, LAG/LEAD), GROUP BY aggregations, JOINs (inner, left, self-joins), subqueries and CTEs, and date arithmetic. McKinsey tends to emphasize complex SQL in their HackerRank OA, while BCG integrates SQL within broader data analysis exercises.",
+    "tags": ["sql", "window_functions", "joins", "cte"]
+  },
+  {
+    "id": "both_python_001",
+    "question": "What Python and pandas skills are tested in BCG X and McKinsey data science interviews?",
+    "company": "Both",
+    "round_type": "Technical",
+    "reference": "Python skills tested include pandas data manipulation (groupby, merge, pivot_table), NumPy operations, list comprehensions, working with missing data, and building scikit-learn ML pipelines. BCG X live coding emphasizes clean pandas code on real datasets. McKinsey tests Python in both the HackerRank OA and technical interviews.",
+    "tags": ["python", "pandas", "numpy", "sklearn"]
+  },
+  {
+    "id": "both_ml_001",
+    "question": "What machine learning concepts are most commonly asked in BCG X interviews?",
+    "company": "BCG",
+    "round_type": "Technical",
+    "reference": "Most commonly asked ML concepts at BCG X include: bias-variance tradeoff, regularization (L1/L2), gradient boosting vs random forests, logistic regression assumptions, cross-validation strategies, precision/recall/F1 tradeoffs, and handling class imbalance. Candidates should be able to explain when to use each model and interpret their outputs in a business context.",
+    "tags": ["ml", "bias_variance", "regularization", "gradient_boosting"]
+  },
+  {
+    "id": "both_stats_001",
+    "question": "What statistics and probability questions come up in BCG X OA and technical rounds?",
+    "company": "BCG",
+    "round_type": "OA",
+    "reference": "Statistics questions at BCG X include: Central Limit Theorem, hypothesis testing (p-value interpretation, Type I/II errors), confidence intervals, Bayes theorem, common probability distributions (normal, Poisson, binomial), A/B testing design, and statistical power. The CodeSignal OA has multiple choice questions on these topics and the technical interview may ask you to derive or interpret results.",
+    "tags": ["statistics", "probability", "hypothesis_testing", "bayes"]
+  },
+  {
+    "id": "bcg_process_001",
+    "question": "What is the full BCG X interview process from application to offer?",
+    "company": "BCG",
+    "round_type": "General",
+    "reference": "The typical BCG X interview process includes: (1) CV screening and recruiter call, (2) Online Assessment on CodeSignal, (3) Technical interview covering ML, stats, and SQL, (4) Live coding or pair programming session, (5) Take-home case assignment, (6) Final round with partners including a business case and PEI-style behavioral questions. The total process takes 4 to 8 weeks.",
+    "tags": ["process", "timeline", "rounds"]
+  },
+  {
+    "id": "mckinsey_process_001",
+    "question": "What is the McKinsey QuantumBlack data scientist interview process end to end?",
+    "company": "McKinsey",
+    "round_type": "General",
+    "reference": "McKinsey QuantumBlack's interview process typically includes: (1) Application and CV review, (2) HackerRank Online Assessment with SQL and Python coding, (3) Technical interview covering ML theory and a case study, (4) PEI behavioral interview, (5) Final round with senior partners. The process is competitive and can take 6 to 10 weeks from application to offer.",
+    "tags": ["process", "timeline", "mckinsey"]
+  },
+  {
+    "id": "bcg_difficulty_001",
+    "question": "How hard is the BCG X CodeSignal OA compared to other DS assessments?",
+    "company": "BCG",
+    "round_type": "OA",
+    "reference": "Candidates report the BCG X CodeSignal OA as moderately difficult. The multiple choice statistics and ML sections require solid graduate-level knowledge. The coding section is easier than LeetCode hard problems but requires clean, correct Python. Overall pass rate is estimated at 30 to 50% for candidates who make it to this stage.",
+    "tags": ["difficulty", "oa", "codesignal", "pass_rate"]
+  },
+  {
+    "id": "both_prep_001",
+    "question": "What is the best 4-week preparation plan for BCG X and McKinsey QuantumBlack interviews?",
+    "company": "Both",
+    "round_type": "General",
+    "reference": "A 4-week prep plan: Week 1 — Review statistics and probability fundamentals, practice 20 SQL problems on LeetCode/DataLemur. Week 2 — ML theory review, implement common models from scratch, practice explaining concepts out loud. Week 3 — Take-home case practice, pandas exercises, build one end-to-end ML project. Week 4 — Mock interviews, PEI story preparation, CodeSignal/HackerRank timed practice tests.",
+    "tags": ["preparation", "study_plan", "timeline"]
+  },
+  {
+    "id": "both_glassdoor_001",
+    "question": "What do Glassdoor reviews say about the difficulty of BCG X data science interviews?",
+    "company": "BCG",
+    "round_type": "General",
+    "reference": "Glassdoor reviews for BCG X data science interviews describe them as challenging but fair. Most reviewers rate the difficulty 4 out of 5. Common feedback is that the technical depth in statistics and ML is higher than expected for a consulting firm, and that the take-home case requires strong communication skills alongside technical ability.",
+    "tags": ["glassdoor", "difficulty", "reviews"]
+  }
+]

@@ -13,6 +13,7 @@ from typing import Optional
 
 import numpy as np
 from groq import Groq
+from langfuse import observe
 from sentence_transformers import CrossEncoder
 
 from .embedder import embed_query
@@ -114,6 +115,7 @@ def _rrf_merge(ranked_lists: list[list[tuple[int, float]]], k: int = RRF_K) -> l
     return sorted(scores.items(), key=lambda x: x[1], reverse=True)
 
 
+@observe(as_type="retriever", name="hybrid_retrieve")
 def retrieve(
     query: str,
     top_k: int = 6,
